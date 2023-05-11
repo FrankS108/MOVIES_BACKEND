@@ -4,8 +4,9 @@ const addMovie = async(req, res) => {
     try {
         const movie = new Movie(req.body);
         const movieSaved = await movie.save();
-        res.json(movieSaved);
+        res.status(200).send(movieSaved);
     } catch (error) {
+        res.status(400).send({msg: "No se pudo guardar la película."});
         console.log(error);
     }
 };
@@ -23,8 +24,8 @@ const getMovie = async(req, res) => {
     try {
         const { id } = req.params;
         const movie = await Movie.findOne().where("imdbid").equals(id);
-        if(!movie) res.json({msg: "Película no encontrada"});
-        res.json(movie);
+        if(!movie) res.status(404).send({msg: "Película no encontrada"});
+        res.status(200).send(movie);
     } catch (error) {
         console.log(error);
     }
@@ -34,9 +35,9 @@ const getRate = async(req, res) => {
     try {
         const { id } = req.params;
         const movie = await Movie.findOne().where("imdbid").equals(id);
-        if(!movie) res.json({msg: "Película no encontrada"});
+        if(!movie) res.status(404).send({msg: "Película no encontrada"});
         const { rate, numberOfReviews, imdbid} = movie;
-        res.json({
+        res.status(200).send({
             company: "Frank Reviews",
             rate,
             numberOfReviews,
@@ -51,18 +52,21 @@ const addReview  = async(req, res) => {
     const { rate } = req.body;
     const { id } = req.params;
     const movie = await Movie.findOne().where("imdbid").equals(id);
-    console.log(`El rate recibido es ${rate}`);
-    if(!movie) res.json({msg: "Película no encontrada"});
+    if(!movie) res.status(404).send({msg: "Película no encontrada"});
     movie.numberOfReviews += 1;
     movie.rate = ((movie.rate * (movie.numberOfReviews - 1) + rate))/movie.numberOfReviews;
-    console.log(`El rate total es ${movie.rate}`);
     await movie.save();
-    res.json({msg: "Calificación guardada exitosamente!"});
+    res.status(200).send({msg: "Calificación guardada exitosamente!"});
 };
 
 const editMovie = async(req, res) => {
-    await Movie.findByIdAndUpdate(req.params.id, req.body);
-    res.json({msg: "Editado correctamente"});
+    try {
+        await Movie.findByIdAndUpdate(req.params.id, req.body);
+        res.status(200).send({msg: "Editado correctamente"});
+    } catch (error) {
+        res.status(400).send({msg: "No se pudo editar."});
+        console.log(error);
+    }
 };
 
 export{
